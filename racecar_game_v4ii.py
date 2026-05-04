@@ -25,13 +25,13 @@ pygame.display.set_caption("Racecar Game - by Charlotte")
 
 grey = (50, 50, 50)  # background colour
 
-road = pygame.image.load("images/road.png")
+road = pygame.image.load("images/road2.png")
 
 # resize car image
 og_image = pygame.image.load("images/car_1.png").convert_alpha()
 og_width, og_height = og_image.get_size()
-new_width = 50
-new_height = 100
+new_width = 70
+new_height = 140
 
 resized_image = pygame.transform.scale(og_image, (new_width, new_height))
 
@@ -42,8 +42,8 @@ car_rect = car_image.get_rect()
 car_rect.centerx = screen_width // 2
 car_rect.centery = screen_height // 2
 
-# Set the speed of the car
-speed = 5
+# Set the speed of the car's turning
+speed = 8
 
 # set car direction
 direction = 0
@@ -60,16 +60,22 @@ while True: # let user quit
             pygame.quit()
             sys.exit()
 
-    # Check if the up or down keys are pressed
+    # start with 0 movement every frame
+    current_speed = 0
+
+    # check if keys are pressed
     keys = pygame.key.get_pressed()
     if keys[left_key]:
         direction = 180
+        current_speed = speed  # Set speed only when key is held
     elif keys[right_key]:
         direction = 0
+        current_speed = speed  # Set speed only when key is held
 
-    # update position of car based on direction and speed
-    dx, dy = speed * math.cos(math.radians(direction)), -speed * math.sin(
-        math.radians(direction))
+    # update position using current_speed
+    dx = current_speed * math.cos(math.radians(direction))
+    dy = -current_speed * math.sin(math.radians(direction))
+
     car_rect.centerx += dx
     car_rect.centery += dy
 
