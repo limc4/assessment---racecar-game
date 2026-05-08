@@ -67,10 +67,10 @@ while True: # let user quit
     keys = pygame.key.get_pressed()
     if keys[left_key]:
         direction = 180
-        current_speed = speed  # Set speed only when key is held
+        current_speed = speed  # set speed only when key is held
     elif keys[right_key]:
         direction = 0
-        current_speed = speed  # Set speed only when key is held
+        current_speed = speed  # set speed only when key is held
 
     # update position using current_speed
     dx = current_speed * math.cos(math.radians(direction))
@@ -79,7 +79,7 @@ while True: # let user quit
     car_rect.centerx += dx
     car_rect.centery += dy
 
-    # Keep the car within the screen bounds
+    # keep the car within the screen bounds
     if car_rect.left < 0:
         car_rect.left = 0
     elif car_rect.right > screen_width:

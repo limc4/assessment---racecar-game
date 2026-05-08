@@ -1,5 +1,5 @@
-"""program for single player racecar game - v5
-scrolling road and car movement
+"""program for single player racecar game - v6i
+Car class with turning function inside
 Created by Charlotte"""
 
 import pygame
@@ -35,18 +35,18 @@ try:
 
     # Car Image
     og_image = pygame.image.load("images/car_1.png").convert_alpha()
-    car_image = pygame.transform.scale(og_image, (70, 140))
-    car_rect = car_image.get_rect()
+    player_car_surface = pygame.transform.scale(og_image, (70, 140))
+    player_car_rect = player_car_surface.get_rect()
 except Exception as e:
     print(f"Error loading assets: {e}")
     pygame.quit()
     sys.exit()
 
 class Road:
-    def __init__(self, y_pos):
+    def __init__(self, y_position):
         self.image = ROAD_SURFACE
         self.x = 0
-        self.y = y_pos
+        self.y = y_position
         self.speed = 5
 
     def update(self):
@@ -56,30 +56,45 @@ class Road:
     def draw(self, surface):
         surface.blit(self.image, (self.x, self.y))
 
-def car_turn(rect, current_direction):
-    """Handles car movement and returns updated position"""
-    current_speed = 0
-    keys = pygame.key.get_pressed()
+class Car:
+    def __init__(self, image, speed):
+        self.image = image
+        self.x = SCREEN_WIDTH
+        self.y = SCREEN_HEIGHT - self.image.get_height() - 10
+        self.speed = speed
+        self.rect = self.image.get_rect(topleft=(self.x, self.y))
 
-    if keys[left_key]:
-        current_direction = 180
-        current_speed = speed
-    elif keys[right_key]:
-        current_direction = 0
-        current_speed = speed
+    def update(self):
+        # move up
+        self.y -= self.speed
 
-    # calculate movement
-    dx = current_speed * math.cos(math.radians(current_direction))
-    dy = -current_speed * math.sin(math.radians(current_direction))
+    def draw(self, surface):
+        surface.blit(self.image, (self.x, self.y))
 
-    car_rect.centerx += dx
-    car_rect.centery += dy
+    def car_turn(self, current_direction):
+        """Handles car movement and returns updated position"""
+        current_speed = 0
+        keys = pygame.key.get_pressed()
 
-    # keep the car within the screen bounds
-    if car_rect.left < 0: rect.left = 0
-    if car_rect.right > SCREEN_WIDTH: rect.right = SCREEN_WIDTH
+        if keys[left_key]:
+            current_direction = 180
+            current_speed = self.speed
+        elif keys[right_key]:
+            current_direction = 0
+            current_speed = self.speed
 
-    return current_direction
+        # calculate movement
+        dx = current_speed * math.cos(math.radians(current_direction))
+        dy = -current_speed * math.sin(math.radians(current_direction))
+
+        self.rect.centerx += dx
+        self.rect.centery += dy
+
+        # keep the car within the screen bounds
+        if self.rect.left < 0: self.rect.left = 0
+        if self.rect.right > SCREEN_WIDTH: self.rect.right = SCREEN_WIDTH
+
+        return current_direction
 
 def main():
     # initialise objects
@@ -87,10 +102,13 @@ def main():
     road1 = Road(0)
     road2 = Road(-SCREEN_HEIGHT)
 
-    # set car position
-    car_rect.centerx = SCREEN_WIDTH // 2
-    car_rect.centery = SCREEN_HEIGHT // 2
-    direction = 0
+    # create the object and its internal self.rect
+    player_car = Car(player_car_surface, speed)
+
+    # set the starting position on the object's rect
+    player_car.rect.centerx = SCREEN_WIDTH // 2
+    player_car.rect.centery = SCREEN_HEIGHT // 2
+    direction = 0  # initially isn't turning
 
     while True:
         # event handling
@@ -103,14 +121,14 @@ def main():
         road1.update()
         road2.update()
 
+        # update car
+        direction = Car.car_turn(player_car, direction)
+
         # check if road segments need to "leapfrog"
         if road1.y >= SCREEN_HEIGHT:
             road1.y = road2.y - SCREEN_HEIGHT
         if road2.y >= SCREEN_HEIGHT:
             road2.y = road1.y - SCREEN_HEIGHT
-
-        # update car
-        direction = car_turn(car_rect, direction)
 
         # draw things
         screen.fill(GREY)
@@ -120,7 +138,7 @@ def main():
         road2.draw(screen)
 
         # draw car second (foreground)
-        screen.blit(car_image, car_rect)
+        screen.blit(player_car.image, player_car.rect)
 
         # refresh screen
         pygame.display.flip()
