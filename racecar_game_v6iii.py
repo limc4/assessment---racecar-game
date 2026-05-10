@@ -1,5 +1,5 @@
-"""program for single player racecar game - v6ii
-initialise other cars with random speeds
+"""program for single player racecar game - v6iii
+allow user to use the up and down arrow keys to move
 created by Charlotte"""
 
 import pygame
@@ -22,6 +22,8 @@ GREY = (50, 50, 50)
 # set keys that control car
 left_key = pygame.K_LEFT
 right_key = pygame.K_RIGHT
+up_key = pygame.K_UP
+down_key = pygame.K_DOWN
 
 speed = 8  # speed of car's turning
 
@@ -52,10 +54,11 @@ class Road:
         self.speed = 5
 
     def update(self):
-        # Move down
+        """move road down screen"""
         self.y += self.speed
 
     def draw(self, surface):
+        """draw road on screen"""
         surface.blit(self.image, (self.x, self.y))
 
 class Car:
@@ -71,15 +74,16 @@ class Car:
         self.rect = self.image.get_rect(topleft=(self.x, self.y))
 
     def update(self):
-        # move up screen
+        """move car up screen"""
         self.y -= self.speed
         self.rect.y = self.y
 
     def draw(self, surface):
+        """draw image onto screen"""
         surface.blit(self.image, (self.x, self.y))
 
     def car_turn(self, current_direction):
-        """Handles car movement and returns updated position"""
+        """handle car movement and return updated position"""
         current_speed = 0
         keys = pygame.key.get_pressed()
 
@@ -88,6 +92,12 @@ class Car:
             current_speed = self.speed
         elif keys[right_key]:
             current_direction = 0
+            current_speed = self.speed
+        elif keys[up_key]:
+            current_direction = 90
+            current_speed = self.speed
+        elif keys[down_key]:
+            current_direction = 270
             current_speed = self.speed
 
         # calculate movement
@@ -104,6 +114,7 @@ class Car:
         return current_direction
 
 def main():
+    """main loop"""
     # initialise objects
     # two road segments
     road1 = Road(0)

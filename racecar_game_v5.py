@@ -25,15 +25,15 @@ right_key = pygame.K_RIGHT
 speed = 8  # speed of car's turning
 
 try:
-    # Icon and Title
+    # icon and title
     game_icon = pygame.image.load("images/game_icon.png")
     pygame.display.set_icon(game_icon)
     pygame.display.set_caption("Racecar Game - by Charlotte")
 
-    # Road Image (Should be 640x480 for best results)
+    # road image (should be 640x480 for best results)
     ROAD_SURFACE = pygame.image.load("images/road_.png").convert()
 
-    # Car Image
+    # car Image
     og_image = pygame.image.load("images/car_1.png").convert_alpha()
     car_image = pygame.transform.scale(og_image, (70, 140))
     car_rect = car_image.get_rect()
@@ -50,7 +50,7 @@ class Road:
         self.speed = 5
 
     def update(self):
-        # Move down
+        # move down
         self.y += self.speed
 
     def draw(self, surface):
