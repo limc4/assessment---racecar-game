@@ -1,5 +1,5 @@
-"""program for single player racecar game - v8i
-let user quit, resume, or play again
+"""program for single player racecar game - v8ii
+fix how screen resumes
 created by Charlotte"""
 
 import pygame
@@ -20,6 +20,7 @@ GREY = (128, 128, 128)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (230, 5, 65)
+TRANSPARENCY = 100
 
 msg_font = pygame.font.SysFont("lucida console", 20)
 
@@ -94,7 +95,8 @@ class Car:
 
     def draw(self, surface):
         """draw image onto screen"""
-        surface.blit(self.image, (self.x, self.y))
+        # surface.blit(self.image, (self.x, self.y))
+        surface.blit(self.image, self.rect)
 
     def car_turn(self, current_direction):
         """handle car movement and return updated position"""
@@ -142,7 +144,7 @@ def main():
     road1 = Road(0)
     road2 = Road(-SCREEN_HEIGHT)
 
-    # create the object and its internal self.rect
+    # create the player car object and its internal self.rect
     player_car = Car(player_car_surface, (SCREEN_WIDTH // 2),
                      player_car_surface.get_height(),speed)
 
@@ -158,91 +160,98 @@ def main():
     game_paused = False
 
     while play:
-        # event handling
         for event in pygame.event.get():
-            if event.type == pygame.QUIT and game_over:
-                game_over = False
-                play = False
-            # bring user to game_paused menu
-            elif event.type == pygame.QUIT and not game_paused:
-                game_paused = True
-                # pygame.display.update()
-            # if user chooses to quit in game_paused menu
-            elif event.type == pygame.QUIT and game_paused:
-                game_over = False
-                play = False
-
-            if event.type == pygame.KEYDOWN:
-                # if user wants to play again after losing or pausing
-                if event.key == pygame.K_r and game_over or game_paused:
-                    main()
-                # if user wants to quit and game is paused
-                elif event.key == pygame.K_q and game_paused:
-                    game_over = False
+            # handle X button
+            if event.type == pygame.QUIT:
+                if not game_paused and not game_over:
+                    # first click: pause the game
+                    game_paused = True
+                    break  # stop checking other events in the list
+                elif game_paused or game_over:
+                    # second click (or clicking while crashed): actually quit
                     play = False
-                # if user wants to resume playing
-                elif event.key == K_SPACE:
+                    break
+
+            # handle Keyboard
+            if event.type == pygame.KEYDOWN:
+                # SPACE to resume
+                if event.key == pygame.K_SPACE:
                     game_paused = False
 
-        # update roads
-        road1.update()
-        road2.update()
+                # 'r' to restart
+                elif event.key == pygame.K_r:
+                    main()
 
-        # if last car has driven at least 200 pixels up from the bottom
-        if len(npc_cars) == 0 or npc_cars[-1].y < (SCREEN_HEIGHT - 350):
-            x_options = [SCREEN_WIDTH // 6, (SCREEN_WIDTH // 6 * 3),
-                         (SCREEN_WIDTH // 6 * 5)]
-            x_choice = random.choice(x_options)
+                # 'q' to quit
+                elif event.key == pygame.K_q:
+                    play = False
 
-            # randomize npc car image
-            car_options = [car2_surface, car3_surface, car4_surface,
-                           car5_surface, car6_surface]
-            car_choice = random.choice(car_options)
-            og_image_npc = car_choice
+        if not game_paused and not game_over:
 
-            # resize npc car image
-            npc_surface = pygame.transform.scale(og_image_npc, (70, 140))
+            # update roads
+            road1.update()
+            road2.update()
 
-            # pass SCREEN_HEIGHT + 10 as starting y
-            npc_cars.append(Car(npc_surface, x_choice, SCREEN_HEIGHT + 10,
-                                random.randint(3, 8)))
+            # check if road segments need to "leapfrog"
+            if road1.y >= SCREEN_HEIGHT:
+                road1.y = road2.y - SCREEN_HEIGHT
+            if road2.y >= SCREEN_HEIGHT:
+                road2.y = road1.y - SCREEN_HEIGHT
 
-        # draw things
+            # if last car has driven at least 200 pixels up from the bottom
+            if len(npc_cars) == 0 or npc_cars[-1].y < (SCREEN_HEIGHT - 350):
+                x_options = [SCREEN_WIDTH // 6, (SCREEN_WIDTH // 6 * 3),
+                             (SCREEN_WIDTH // 6 * 5)]
+                x_choice = random.choice(x_options)
+
+                # randomize npc car image
+                car_options = [car2_surface, car3_surface, car4_surface,
+                               car5_surface, car6_surface]
+                car_choice = random.choice(car_options)
+                og_image_npc = car_choice
+
+                # resize npc car image
+                npc_surface = pygame.transform.scale(og_image_npc,
+                                                     (70, 140))
+
+                # pass SCREEN_HEIGHT + 10 as starting y
+                npc_cars.append(Car(npc_surface, x_choice, SCREEN_HEIGHT + 10,
+                                    random.randint(3, 8)))
+
+            # update or remove npc cars
+            for car in npc_cars[:]:
+                car.update()  # math happens here
+                # car.draw(screen)
+
+                # check for collision
+                if player_car.rect.inflate(-20, -20).colliderect(
+                        car.rect.inflate(-10, -10)):
+                    game_over = True
+
+                # remove cars if they leave the screen
+                if car.y < -140:
+                    npc_cars.remove(car)
+
+            # update car
+            direction = Car.car_turn(player_car, direction)
+
+        # draw things all the time
         screen.fill(GREY)
 
         # draw roads first (background)
         road1.draw(screen)
         road2.draw(screen)
 
-        # update or remove npc cars
+        # draw npc cars second
         for car in npc_cars[:]:
-            car.update()
             car.draw(screen)
 
-            # check for collision
-            if player_car.rect.inflate(-20, -20).colliderect(
-                    car.rect.inflate(-10, -10)):
-                game_over = True
-
-            # remove cars if they leave the screen
-            if car.y < -140:
-                npc_cars.remove(car)
-
-        # update car
-        direction = Car.car_turn(player_car, direction)
-
-        # check if road segments need to "leapfrog"
-        if road1.y >= SCREEN_HEIGHT:
-            road1.y = road2.y - SCREEN_HEIGHT
-        if road2.y >= SCREEN_HEIGHT:
-            road2.y = road1.y - SCREEN_HEIGHT
-
-        # draw car second (foreground)
+        # draw car third (foreground)
         screen.blit(player_car.image, player_car.rect)
 
         if game_over:
             grey_screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-            grey_screen.set_alpha(100)  # make grey transparent
+            grey_screen.set_alpha(TRANSPARENCY)  # make grey transparent
             screen.blit(grey_screen, (0, 0))
 
             message("You crashed!", RED,
@@ -252,15 +261,9 @@ def main():
             message("top right X button to exit.", WHITE,
                     (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
 
-            # stop objects from moving
-            for car in npc_cars:
-                car.speed = 0
-            road1.y = 0
-            road2.y = 0
-
         if game_paused:
             grey_screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-            grey_screen.set_alpha(100)  # make grey transparent
+            grey_screen.set_alpha(TRANSPARENCY)  # make grey transparent
             screen.blit(grey_screen, (0, 0))
 
             instructions1 = "Exit: click X again or"
@@ -273,12 +276,6 @@ def main():
             message(instructions3, WHITE, (SCREEN_WIDTH // 2,
                                            SCREEN_HEIGHT // 2 + 20))
 
-            # stop objects from moving
-            for car in npc_cars:
-                car.speed = 0
-            road1.y = 0
-            road2.y = 0
-
         # refresh screen
         pygame.display.flip()
         clock.tick(FPS)
@@ -286,3 +283,5 @@ def main():
 # main routine
 if __name__ == "__main__":
     main()
+    pygame.quit()
+    sys.exit()
