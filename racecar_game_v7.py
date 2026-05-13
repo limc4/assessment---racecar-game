@@ -1,6 +1,5 @@
-"""program for single player racecar game - v6iii
-allow user to use the up and down arrow keys to move and make cars disappear
-once completely off-screen
+"""program for single player racecar game - v7
+function to display messages and collision detection
 created by Charlotte"""
 
 import pygame
@@ -15,10 +14,15 @@ SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
 FPS = 60
 
+GREY = (128, 128, 128)
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (230, 5, 65)
+
+msg_font = pygame.font.SysFont("lucida console", 20)
+
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
-
-GREY = (50, 50, 50)
 
 # set keys that control car
 left_key = pygame.K_LEFT
@@ -41,6 +45,13 @@ try:
     og_image = pygame.image.load("images/car_1.png").convert_alpha()
     player_car_surface = pygame.transform.scale(og_image, (70, 140))
     player_car_rect = player_car_surface.get_rect()
+
+    # npc car images
+    car2_surface = pygame.image.load("images/car_2.png").convert_alpha()
+    car3_surface = pygame.image.load("images/car_3.png").convert_alpha()
+    car4_surface = pygame.image.load("images/car_4.png").convert_alpha()
+    car5_surface = pygame.image.load("images/car_5.png").convert_alpha()
+    car6_surface = pygame.image.load("images/car_6.png").convert_alpha()
 
 except Exception as e:
     print(f"Error loading assets: {e}")
@@ -114,6 +125,14 @@ class Car:
 
         return current_direction
 
+def message(msg, txt_colour, center_):
+    """display messages"""
+    txt = msg_font.render(msg, True, txt_colour)
+
+    text_box = txt.get_rect(center=center_)
+
+    screen.blit(txt, text_box)
+
 def main():
     """main loop"""
     # initialise objects
@@ -132,12 +151,18 @@ def main():
     player_car.rect.centery = SCREEN_HEIGHT // 2
     direction = 0  # initially isn't turning
 
-    while True:
+    play = True
+    game_over = False
+
+    while play:
         # event handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                play = False
+            if event.type == pygame.KEYDOWN:
+                # if user wants to play again after losing
+                if event.key == pygame.K_r and game_over:
+                    main()
 
         # update roads
         road1.update()
@@ -150,14 +175,13 @@ def main():
             x_choice = random.choice(x_options)
 
             # randomize npc car image
-            car_numbers = [2, 3, 4, 5, 6]
-            car_choice = random.choice(car_numbers)
-
-            og_image2 = pygame.image.load(
-                f"images/car_{car_choice}.png").convert_alpha()
+            car_options = [car2_surface, car3_surface, car4_surface,
+                           car5_surface, car6_surface]
+            car_choice = random.choice(car_options)
+            og_image_npc = car_choice
 
             # resize npc car image
-            npc_surface = pygame.transform.scale(og_image2, (70, 140))
+            npc_surface = pygame.transform.scale(og_image_npc, (70, 140))
 
             # pass SCREEN_HEIGHT + 10 as starting y
             npc_cars.append(Car(npc_surface, x_choice, SCREEN_HEIGHT + 10,
@@ -175,6 +199,12 @@ def main():
             car.update()
             car.draw(screen)
 
+            # check for collision
+            if player_car.rect.inflate(-20, -20).colliderect(
+                    car.rect.inflate(-10, -10)):
+                game_over = True
+
+
             # remove cars if they leave the screen
             if car.y < -140:
                 npc_cars.remove(car)
@@ -188,8 +218,27 @@ def main():
         if road2.y >= SCREEN_HEIGHT:
             road2.y = road1.y - SCREEN_HEIGHT
 
+
         # draw car second (foreground)
         screen.blit(player_car.image, player_car.rect)
+
+        if game_over:
+            grey_screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            grey_screen.set_alpha(100)  # make grey transparent
+            screen.blit(grey_screen, (0, 0))
+
+            message("You crashed!", RED,
+                    (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20))
+            message("Press 'r' to restart or the", WHITE,
+                    (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+            message("top right X button to exit.", WHITE,
+                    (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
+
+            # stop objects from moving
+            for car in npc_cars:
+                car.speed = 0
+            road1.y = 0
+            road2.y = 0
 
         # refresh screen
         pygame.display.flip()
